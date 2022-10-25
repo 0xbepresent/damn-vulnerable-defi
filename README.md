@@ -4,9 +4,9 @@
 
 Featuring flash loans, price oracles, governance, NFTs, lending pools, smart contract wallets, timelocks, and more!
 
-## Play
+## Notes
 
-Visit [damnvulnerabledefi.xyz](https://damnvulnerabledefi.xyz)
+This repository has my own solutions. Visit [damnvulnerabledefi.xyz](https://damnvulnerabledefi.xyz) for more info.
 
 ## Disclaimer
 
