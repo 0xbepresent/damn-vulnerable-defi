@@ -13,3 +13,9 @@ This repository has my own solutions. Visit [damnvulnerabledefi.xyz](https://dam
 All Solidity code, practices and patterns in this repository are DAMN VULNERABLE and for educational purposes only.
 
 DO NOT USE IN PRODUCTION.
+
+## Test
+
+```bash
+npx hardhat test test/YOUR_CHALLENGE.challenge.js
+```
