@@ -47,8 +47,8 @@ describe('[Challenge] Side entrance', function () {
         // Not checking exactly how much is the final balance of the attacker,
         // because it'll depend on how much gas the attacker spends in the attack
         // If there were no gas costs, it would be balance before attack + ETHER_IN_POOL
-        // expect(
-        //     await ethers.provider.getBalance(attacker.address)
-        // ).to.be.gt(this.attackerInitialEthBalance);
+        expect(
+            await ethers.provider.getBalance(attacker.address)
+        ).to.be.gt(this.attackerInitialEthBalance);
     });
 });
